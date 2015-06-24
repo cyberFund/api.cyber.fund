@@ -1,0 +1,16 @@
+{
+  "name": "coinmarketcap_archive",
+  "version": "1.0.0",
+  "description": "",
+  "main": "fetchMarketCap.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "elasticsearch": "^5.0.0",
+    "request-promise": "^0.4.2",
+    "underscore": "^1.8.3"
+  }
+}
