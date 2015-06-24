@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "elasticsearch": "^5.0.0",
+    "moment": "^2.10.3",
     "request-promise": "^0.4.2",
     "underscore": "^1.8.3"
   }
