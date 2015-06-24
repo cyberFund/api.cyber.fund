@@ -26,8 +26,11 @@ function fetch() {
 }
 
 function _flo(val){
-  var parsed= parseFloat(val);
-  return isNaN(parsed) ? val : parsed
+  try {
+    return parseFloat(val);
+  } catch(e) {
+    return val;
+  }
 }
 
 function parseResponse(data) {
