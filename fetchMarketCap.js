@@ -25,6 +25,10 @@ function fetch() {
   rp(options).then(handleResponse, handleError);
 }
 
+function _flo(val){
+  var parsed= parseFloat(val);
+  return isNaN(parsed) ? val : parsed
+}
 
 function parseResponse(data) {
   var parsedData = {};
@@ -43,11 +47,6 @@ function handleError(error) {
 function convertMarketCapSource(market){
   function pickCurrencies(item){
     return _.pick(item, ['usd', 'btc']);
-  }
-
-  function _flo(val){
-    var parsed= parseFloat(val);
-    return isNaN(parsed) ? val : parsed
   }
 
   var markt = {
@@ -72,6 +71,9 @@ function handleResponse(response) {
   console.log(timestamp);
   var markets = response['markets'];
   var exchangeRates = response['currencyExchangeRates'];
+  _.each(exchangeRates, function(v, k){
+    exchangeRates[k] = _flo(v);
+  })
 
   var bulk = [];
   bulk.push(
