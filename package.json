@@ -1,13 +1,14 @@
 {
-  "name": "coinmarketcap_archive",
+  "name": "coinmarketcap_fetch",
   "version": "1.0.0",
-  "description": "",
+  "description": "simple script to fetch coinmarketcap data to elasticsearch",
   "main": "fetchMarketCap.js",
   "scripts": {
+    "start": "node fetchMarketCap.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "",
   "dependencies": {
     "elasticsearch": "^5.0.0",
     "moment": "^2.10.3",
