@@ -14,7 +14,7 @@ var es = new esLib.Client({
 var timestamp = moment().utc().subtract(1, 'days').valueOf();
 console.log(timestamp);
 es.search({
-  index: 'market-cap-data',
+  index: 'marketcap-read',
   type: 'market',
   "size": 1,
   "body": {

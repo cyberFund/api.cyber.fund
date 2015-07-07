@@ -6,7 +6,7 @@ var config = require("./.config.json");
 
 var es = new esLib.Client({
 
-  host: 'http://' + config.ES_USERNAME + ':' + config.ES_PASSWORD + '@es.index.cyber.fund',
+  host: 'http://' + process.env.ES_USERNAME + ':' + process.env.ES_PASSWORD + '@es.index.cyber.fund',
 
 
   //log: 'trace'
@@ -15,7 +15,6 @@ var es = new esLib.Client({
 
 var sourceUrl = "http://coinmarketcap.northpole.ro/api/v5/all.json";
 var fetchInterval = ("RARE_FETCH" in process.env ? 50 : 5) * 60 * 1000;
-
 
 
 var index_old = "market-cap-data";
@@ -115,7 +114,6 @@ function handleResponse(response) {
 }
 
 
-
 function recreate() {
   es.indices.create({index: index_v});
 }
@@ -127,12 +125,18 @@ function putmap() {
     body: {
       "market": {
         properties: {
-          "timestamp": {"type": "date",
-            "format": "date_time_no_millis"},
+          "timestamp": {
+            "type": "date",
+            "format": "date_time_no_millis"
+          },
           "system": {
             "type": "string",
             "index": "not_analyzed"
           }
+        },
+        "_timestamp": {
+          "enabled": true,
+          "path": "timestamp"
         }
       }
     }
