@@ -76,7 +76,7 @@ function handleResponse(response) {
   var exchangeRates = response['currencyExchangeRates'];
   _.each(exchangeRates, function(v, k){
     exchangeRates[k] = _flo(v);
-  })
+  });
 
   var bulk = [];
   bulk.push(

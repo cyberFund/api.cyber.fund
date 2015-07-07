@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "not sure yet",
+  "license": "MIT",
   "dependencies": {
     "elasticsearch": "^5.0.0",
     "moment": "^2.10.3",
