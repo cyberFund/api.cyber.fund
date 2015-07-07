@@ -2,10 +2,11 @@ var _ = require('underscore');
 var rp = require('request-promise');
 var esLib = require('elasticsearch');
 var moment = require('moment');
+var config = require("./.config.json");
 
 var es = new esLib.Client({
 
-  host: 'http://' + process.env.ES_USERNAME + ':' + process.env.ES_PASSWORD + '@es.index.cyber.fund',
+  host: 'http://' + config.ES_USERNAME + ':' + config.ES_PASSWORD + '@es.index.cyber.fund',
 
 
   //log: 'trace'
@@ -14,6 +15,14 @@ var es = new esLib.Client({
 
 var sourceUrl = "http://coinmarketcap.northpole.ro/api/v5/all.json";
 var fetchInterval = ("RARE_FETCH" in process.env ? 50 : 5) * 60 * 1000;
+
+
+
+var index_old = "market-cap-data";
+var index_v = "marktcap-v1";
+var alias_read = "marketcap-read";
+var alias_write = "marketcap-write";
+
 
 function fetch() {
   var options = {
@@ -25,10 +34,10 @@ function fetch() {
   rp(options).then(handleResponse, handleError);
 }
 
-function _flo(val){
+function _flo(val) {
   try {
     return parseFloat(val);
-  } catch(e) {
+  } catch (e) {
     return val;
   }
 }
@@ -47,8 +56,8 @@ function handleError(error) {
   console.log(error);
 }
 
-function convertMarketCapSource(market){
-  function pickCurrencies(item){
+function convertMarketCapSource(market) {
+  function pickCurrencies(item) {
     return _.pick(item, ['usd', 'btc']);
   }
 
@@ -74,7 +83,7 @@ function handleResponse(response) {
   console.log(timestamp);
   var markets = response['markets'];
   var exchangeRates = response['currencyExchangeRates'];
-  _.each(exchangeRates, function(v, k){
+  _.each(exchangeRates, function (v, k) {
     exchangeRates[k] = _flo(v);
   });
 
@@ -82,7 +91,7 @@ function handleResponse(response) {
   bulk.push(
     {
       index: {
-        _index: 'market-cap-data',
+        _index: alias_write,
         _type: 'exchange-rates'
       }
     });
@@ -92,7 +101,7 @@ function handleResponse(response) {
   _.each(markets, function (market) {
     bulk.push({
       index: {
-        _index: 'market-cap-data',
+        _index: alias_write,
         _type: 'market'
       }
     });
@@ -105,24 +114,26 @@ function handleResponse(response) {
   es.bulk({body: bulk});
 }
 
+
+
 function recreate() {
-  es.indices.create({index: 'market-cap-data'});
+  es.indices.create({index: index_v});
 }
 function putmap() {
   return es.indices.putMapping({
-    index: "market-cap-data",
+    index: index_v,
     type: "market",
     ignoreConflicts: true,
     body: {
       "market": {
         properties: {
-          //"timestamp": {"type": "date", "format": "date_time_no_millis"}
-          "system": {"type": "string", "index": "not_analyzed"}
-        }//,
-       // "_timestamp": {
-         // "enabled": true,
-        //  "path": "timestamp"
-       // }
+          "timestamp": {"type": "date",
+            "format": "date_time_no_millis"},
+          "system": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
       }
     }
   });
@@ -142,3 +153,5 @@ if (!param) {
   fetch();
   setInterval(fetch, fetchInterval);
 }
+
+
