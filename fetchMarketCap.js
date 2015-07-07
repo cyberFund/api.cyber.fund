@@ -109,15 +109,15 @@ function recreate() {
   es.indices.create({index: 'market-cap-data'});
 }
 function putmap() {
-  return;/*
-  es.indices.putMapping({
+  return es.indices.putMapping({
     index: "market-cap-data",
     type: "market",
     ignoreConflicts: true,
     body: {
       "market": {
         properties: {
-          "timestamp": {"type": "date", "format": "date_time_no_millis"}
+          //"timestamp": {"type": "date", "format": "date_time_no_millis"}
+          "system": {"type": "string", "index": "not_analyzed"}
         }//,
        // "_timestamp": {
          // "enabled": true,
@@ -125,7 +125,7 @@ function putmap() {
        // }
       }
     }
-  });*/
+  });
 }
 
 var param = process.argv[2];
