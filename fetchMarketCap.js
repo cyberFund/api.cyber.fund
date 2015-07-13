@@ -69,6 +69,7 @@ function convertMarketCapSource(market) {
     volume24_usd: _flo(market.volume24.usd),
     system: market.name,
     symbol: market.symbol,
+    sym_sys: market.symbol+"|"+market.name,
     tags: market.category,
     ranking_coinmarketcap: market.position,
     supply_current: _flo(market.availableSupplyNumber),
@@ -131,6 +132,10 @@ function putmap() {
             "index": "not_analyzed"
           },
           "symbol": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "sym_sys": {
             "type": "string",
             "index": "not_analyzed"
           }
