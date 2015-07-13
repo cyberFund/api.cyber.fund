@@ -19,20 +19,17 @@ es.search({
   "size": 1,
   "body": {
     "query": {
-
             "range": {
               "timestamp": {
                 "from": "now-1d/h"
               }
             }
-
-
     },
     "aggs": {
       "by_system": {
         "terms": {
           "field": "system",
-          "size": 700
+          "size": 70
         },
         "aggs": {
           "latest_supply": {

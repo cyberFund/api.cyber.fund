@@ -18,7 +18,7 @@ var fetchInterval = ("RARE_FETCH" in process.env ? 50 : 5) * 60 * 1000;
 
 
 var index_old = "market-cap-data";
-var index_v = "marktcap-v1";
+var index_v = "marktcap-v2";
 var alias_read = "marketcap-read";
 var alias_write = "marketcap-write";
 
@@ -68,6 +68,7 @@ function convertMarketCapSource(market) {
     volume24_btc: _flo(market.volume24.btc),
     volume24_usd: _flo(market.volume24.usd),
     system: market.name,
+    symbol: market.symbol,
     tags: market.category,
     ranking_coinmarketcap: market.position,
     supply_current: _flo(market.availableSupplyNumber),
@@ -125,18 +126,14 @@ function putmap() {
     body: {
       "market": {
         properties: {
-          "timestamp": {
-            "type": "date",
-            "format": "date_time_no_millis"
-          },
           "system": {
             "type": "string",
             "index": "not_analyzed"
+          },
+          "symbol": {
+            "type": "string",
+            "index": "not_analyzed"
           }
-        },
-        "_timestamp": {
-          "enabled": true,
-          "path": "timestamp"
         }
       }
     }
