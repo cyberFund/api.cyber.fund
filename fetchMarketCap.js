@@ -166,8 +166,8 @@ function handleMCResponse(response) {
       bulk.push(markt);
     }
   });
-  /*logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
-  logger.debug("last item: ");
+  logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
+  /*logger.debug("last item: ");
   logger.info(bulk.pop());*/
   es.bulk({body: bulk});
 }
@@ -253,8 +253,8 @@ if (!param) {
 curl -XPOST 'http://esserver:9200/_aliases' -d '
 {
   "actions" : [
-    { "remove" : { "index" : "marktcap-v2", "alias" : "marketcap-write" } },
-    { "add" : { "index" : "marktcap-v3", "alias" : "marketcap-write" } }
+    { "remove" : { "index" : "marktcap-v2", "alias" : "marketcap-read" } },
+    { "add" : { "index" : "marktcap-v3", "alias" : "marketcap-read" } }
   ]
 }'
 */
