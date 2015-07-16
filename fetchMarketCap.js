@@ -169,7 +169,7 @@ function handleMCResponse(response) {
   logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
   /*logger.debug("last item: ");
    logger.info(bulk.pop());*/
-  // es.bulk({body: bulk});
+   es.bulk({body: bulk});
 }
 
 
