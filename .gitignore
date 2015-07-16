@@ -4,3 +4,5 @@ _builds/
 _projects/
 _steps/
 .config.json
+chaingear.etag
+chaingear.json

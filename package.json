@@ -11,9 +11,11 @@
   "license": "MIT",
   "dependencies": {
     "elasticsearch": "^5.0.0",
+    "log4js": "^0.6.26",
     "moment": "^2.10.3",
     "request-promise": "^0.4.2",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "when": "^3.7.3"
   },
   "repository": {
     "type": "git",
