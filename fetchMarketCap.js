@@ -168,8 +168,8 @@ function handleMCResponse(response) {
   });
   logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
   /*logger.debug("last item: ");
-  logger.info(bulk.pop());*/
-  es.bulk({body: bulk});
+   logger.info(bulk.pop());*/
+  // es.bulk({body: bulk});
 }
 
 
@@ -244,17 +244,19 @@ if (!param) {
     if (CG.chaingear) {
       clearInterval(moo);
       fetchMC();
-      setInterval(fetchMC, fetchIntervalMC);
+      setInterval(function () {
+        fetchMC();
+      }, fetchIntervalMC);
     }
     console.log("waiting for chaingear");
   }, 1000);
 }
 /*
-curl -XPOST 'http://esserver:9200/_aliases' -d '
-{
-  "actions" : [
-    { "remove" : { "index" : "marktcap-v2", "alias" : "marketcap-read" } },
-    { "add" : { "index" : "marktcap-v3", "alias" : "marketcap-read" } }
-  ]
-}'
-*/
+ curl -XPOST 'http://esserver:9200/_aliases' -d '
+ {
+ "actions" : [
+ { "remove" : { "index" : "marktcap-v2", "alias" : "marketcap-read" } },
+ { "add" : { "index" : "marktcap-v3", "alias" : "marketcap-read" } }
+ ]
+ }'
+ */
