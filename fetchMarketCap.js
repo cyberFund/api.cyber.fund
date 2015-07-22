@@ -287,12 +287,12 @@ if (!param) {
       logger.info(current + " / " + result.hits.total + " ( " + time + " / " +
         time_total_est.toFixed(2) + " seconds) " + time_left_est.toFixed(2) + " estimated time left");
       cbOk(result);
-      nextBatch(CALLBACK_OK, cbErr);
+      if (current < result.hits.total) nextBatch(CALLBACK_OK, cbErr);
     }
 
     nextBatch(function (result) {
       CALLBACK_OK(result);
-    }, cbErr)
+    }, function (err) {cbErr(err)});
   }
 
   var moo = setInterval(function () {
@@ -340,7 +340,7 @@ if (!param) {
         });
         logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
         es.bulk({body: bulk}, function(result){
-          console.log();
+
         });
       }, function cbErr(err) {
         logger.warn(err);
@@ -355,15 +355,15 @@ if (!param) {
           query: {
             range: {
               timestamp: {
-                lte: "now-7d"
+                lte: "now-8d"
               }
             }
           }
         }
       }).then(function(result){
         console.log(result);
-      });  */
-
+      });
+*/
 
       //fetchMC();
       //setInterval(function () {
