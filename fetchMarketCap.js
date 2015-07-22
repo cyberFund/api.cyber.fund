@@ -261,7 +261,7 @@ if (!param) {
       clearInterval(moo);
       allBatches(function cbOk(result){
         logger.info(result.hits.hits[0]._source);
-      }, function crErr(result){
+      }, function cbErr(err){
         logger.warn(err);
       });
       //fetchMC();
