@@ -87,7 +87,7 @@ function transformMarktCapData_v2(market, cg_item){
 // rest of data from cg being added to records here.
 function extendMarktByCG(markt, cg_item){
   var symbol = cg_item.token.token_symbol;
-  var rating_cyber = cg_item.ratings ? (cg_item.ratings.rating || 0) : 0;
+  var rating_cyber = cg_item.ratings ? (cg_item.ratings.rating_cyber || 0) : 0;
 
   _.extend(markt, {
     source: "CoinMarketCap",
@@ -345,6 +345,26 @@ if (!param) {
       }, function cbErr(err) {
         logger.warn(err);
       });
+
+
+      /* replace count to deleteByQuery to delete.
+        es.count({
+        index: 'marketcap-read',
+        type: 'market',
+        body: {
+          query: {
+            range: {
+              timestamp: {
+                lte: "now-7d"
+              }
+            }
+          }
+        }
+      }).then(function(result){
+        console.log(result);
+      });  */
+
+
       //fetchMC();
       //setInterval(function () {
       //  fetchMC();
