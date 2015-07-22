@@ -8,7 +8,6 @@ var logger = require("log4js").getLogger("marketCap fetcher");
 
 var es = new esLib.Client({
   host: 'http://' + process.env.ES_USERNAME + ':' + process.env.ES_PASSWORD + '@es.index.cyber.fund',
-  //log: 'trace'
 });
 
 var sourceUrlMC = "http://coinmarketcap.northpole.ro/api/v5/all.json";
@@ -32,6 +31,7 @@ function handleError(error) {
   console.log(error);
 }
 
+// using this to import data from coinmarketcap data fetch.
 function transformMarketCapData(market, cg_item) {
   function pickCurrencies(item) {
     return _.pick(item, ['usd', 'btc']);
@@ -43,9 +43,6 @@ function transformMarketCapData(market, cg_item) {
     return null;
   }
 
-  var symbol = cg_item.token.token_symbol;
-  var rating_cyber = cg_item.ratings ? (cg_item.ratings.rating || 0) : 0;
-
   var markt = {
     cap_usd: utils.tryParseFloat(market.marketCap.usd),
     cap_btc: utils.tryParseFloat(market.marketCap.btc),
@@ -55,8 +52,44 @@ function transformMarketCapData(market, cg_item) {
     volume24_usd: utils.tryParseFloat(market.volume24.usd),
     tags: market.category,
     ranking_coinmarketcap: market.position,
+    supply_current: utils.tryParseFloat(market.availableSupplyNumber)
+  };
 
-    supply_current: utils.tryParseFloat(market.availableSupplyNumber),
+  markt = extendMarktByCG(markt, cg_item);
+  return markt;
+}
+
+// using this to re-import elasticsearch data from previous versions
+function transformMarktCapData_v2(market, cg_item){
+  if (!cg_item.token || !cg_item.token.token_symbol) {
+    logger.warn("no proper symbol for " + cg_item.system);
+    logger.warn("CG.symbol is " + cg_item.symbol);
+    return null;
+  }
+
+  var markt = {
+    cap_usd: utils.tryParseFloat(market.cap_usd),
+    cap_btc: utils.tryParseFloat(market.cap_btc),
+    price_usd: utils.tryParseFloat(market.price_usd),
+    price_btc: utils.tryParseFloat(market.price_btc),
+    volume24_btc: utils.tryParseFloat(market.volume24_btc),
+    volume24_usd: utils.tryParseFloat(market.volume24_usd),
+    tags: market.tags,
+    timestamp: market.timestamp,
+    ranking_coinmarketcap: market.ranking_coinmarketcap,
+    supply_current: utils.tryParseFloat(market.supply_current)
+  };
+
+  markt = extendMarktByCG(markt, cg_item);
+  return markt;
+}
+
+// rest of data from cg being added to records here.
+function extendMarktByCG(markt, cg_item){
+  var symbol = cg_item.token.token_symbol;
+  var rating_cyber = cg_item.ratings ? (cg_item.ratings.rating || 0) : 0;
+
+  _.extend(markt, {
     source: "CoinMarketCap",
     system: cg_item.system,
     symbol: symbol,
@@ -64,7 +97,7 @@ function transformMarketCapData(market, cg_item) {
     genesis_id: cg_item.genesis_id,
     dependencies: cg_item.dependencies,
     rating_cyber: rating_cyber
-  };
+  });
   if (cg_item.descriptions) {
     _.extend(markt, {
       descriptions: {
@@ -103,6 +136,7 @@ function transformMarketCapData(market, cg_item) {
   return markt;
 }
 
+// using this to push (transformed) marketcap response to es
 function handleMCResponse(response) {
   if (!CG.chaingear) return;
 
@@ -153,10 +187,12 @@ function handleMCResponse(response) {
   es.bulk({body: bulk});
 }
 
-
+// recreating index
 function recreate() {
   es.indices.create({index: index_v});
 }
+
+// appluing mapping to index
 function putmap() {
   var mapping = {
     index: index_v,
@@ -245,8 +281,11 @@ if (!param) {
   function allBatches(cbOk, cbErr) {
     function CALLBACK_OK(result) {
       current += result.hits.hits.length;
-      logger.info(current + " / " + result.hits.total);
-      logger.info(process.uptime());
+      var time = process.uptime();
+      var time_total_est = time * result.hits.total / current;
+      var time_left_est = time_total_est - time;
+      logger.info(current + " / " + result.hits.total + " ( " + time + " / " +
+        time_total_est + " seconds) " + time_left_est + " estimated time left");
       cbOk(result);
       nextBatch(CALLBACK_OK, cbErr);
     }
@@ -259,9 +298,52 @@ if (!param) {
   var moo = setInterval(function () {
     if (CG.chaingear) {
       clearInterval(moo);
-      allBatches(function cbOk(result){
-        logger.info(result.hits.hits[0]._source);
-      }, function cbErr(err){
+      var matchItemToCG = function(item) {
+        var cg = CG;
+        if (!cg.chaingear) return;
+
+        var ret = _.find(cg.chaingear, function (cg_item) {
+          if (!cg_item.aliases) return false;
+          if (!cg_item.token) return false;
+          // match marketcap name with CG marketcap alias
+          return (cg_item.aliases.coinmarketcap == item.system)
+              // match marketcap symbol with:
+              //               # commented out 1. CG marketcap symbol alias;
+              // 2. CG symbol
+            //&& //((item.symbol == cg_item.aliases.coinmarketcap.symbol) ||
+            //(item.symbol == cg_item.token.token_symbol);
+        });
+        return ret;
+      };
+
+      allBatches(function cbOk(result) {
+        var bulk = [];
+        _.each(result.hits.hits, function(hit){
+          var item = hit._source;
+          if (item.system.match(/^Bytecoin$/) || item.system.match(/^InstaMineNugget/)) {
+            return;
+          }
+          var cg_item = matchItemToCG(item);
+          if (cg_item) {
+
+
+              bulk.push({
+                index: {
+                  _index: alias_write,
+                  _type: 'market'
+                }
+              });
+
+              var markt = transformMarktCapData_v2(market, cg_item);
+
+              bulk.push(markt);
+          }
+        });
+        logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
+        es.bulk({body: bulk}, function(result){
+          console.log();
+        });
+      }, function cbErr(err) {
         logger.warn(err);
       });
       //fetchMC();
