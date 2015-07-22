@@ -279,6 +279,20 @@ if (!param) {
 
   // importv2 branch.
   function allBatches(cbOk, cbErr) {
+    function CALLBACK_OK(result) {
+      current += result.hits.hits.length;
+      var time = process.uptime();
+      var time_total_est = time * result.hits.total / current;
+      var time_left_est = time_total_est - time;
+      logger.info(current + " / " + result.hits.total + " ( " + time + " / " +
+        time_total_est.toFixed(2) + " seconds) " + time_left_est.toFixed(2) + " estimated time left");
+      cbOk(result);
+      nextBatch(CALLBACK_OK, cbErr);
+    }
+
+    nextBatch(function (result) {
+      CALLBACK_OK(result);
+    }, cbErr)
   }
 
   var moo = setInterval(function () {
@@ -300,24 +314,9 @@ if (!param) {
             //(item.symbol == cg_item.token.token_symbol);
         });
         return ret;
-      }
-      /*es.count({
-        index: 'marketcap-read',
-        type: 'market',
-        query: {
-          timestamp: {
-            to: "now-7d"
-          }
-        }
-      }).then(function(result){
-        logger.info(result);
-      }, function(reason){
-        logger.warn(reason);
-      });*/
-      function negative(reason){
-          logger.warn(err);
-      }
-      function positive(result){
+      };
+
+      allBatches(function cbOk(result) {
         var bulk = [];
         _.each(result.hits.hits, function(hit){
           var item = hit._source;
@@ -339,24 +338,13 @@ if (!param) {
             }
           }
         });
-
         logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
         es.bulk({body: bulk}, function(result){
-          current += result.hits.hits.length;
-          var time = process.uptime();
-          var time_total_est = time * result.hits.total / current;
-          var time_left_est = time_total_est - time;
-          logger.info(current + " / " + result.hits.total + " ( " + time + " / " +
-            time_total_est.toFixed(2) + " seconds) " + time_left_est.toFixed(2) + " estimated time left");
-          if (current < resul.hits.total)
-            nextBatch(positive, negative);
+          console.log();
         });
-      }
-
-      nextBatch(positive, negative);
-
-
-
+      }, function cbErr(err) {
+        logger.warn(err);
+      });
       //fetchMC();
       //setInterval(function () {
       //  fetchMC();
