@@ -326,17 +326,16 @@ if (!param) {
           var cg_item = matchItemToCG(item);
           if (cg_item) {
 
-
+            var markt = transformMarktCapData_v2(item, cg_item);
+            if (markt) {
               bulk.push({
                 index: {
                   _index: alias_write,
                   _type: 'market'
                 }
               });
-
-              var markt = transformMarktCapData_v2(market, cg_item);
-
               bulk.push(markt);
+            }
           }
         });
         logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
