@@ -44,7 +44,7 @@ function transformMarketCapData(market, cg_item) {
   }
 
   var symbol = cg_item.token.token_symbol;
-  var rating_cyber = cg_item.ratings ? (cg_item.ratings.rating || 0) : 0;
+  var rating_cyber = cg_item.ratings ? (cg_item.ratings.rating_cyber || 0) : 0;
 
   var markt = {
     cap_usd: utils.tryParseFloat(market.marketCap.usd),
