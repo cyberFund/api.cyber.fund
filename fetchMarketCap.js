@@ -105,27 +105,8 @@ function transformMarketCapData(market, cg_item) {
 
 function handleMCResponse(response) {
   if (!CG.chaingear) return;
-  /**
-   *
-   * @param item = marketcap item
-   *  function is interested in fields 'system', 'symbol'
-   * returns matching chaingear item or false
-   */
-  function matchItemToCG(item) {
 
-    var ret = _.find(CG.chaingear, function (cg_item) {
-      if (!cg_item.aliases) return false;
-      if (!cg_item.token) return false;
-      // match marketcap name with CG marketcap alias
-      return (cg_item.aliases.coinmarketcap == item.name)
-          // match marketcap symbol with:
-          //               # commented out 1. CG marketcap symbol alias;
-          // 2. CG symbol
-        && //((item.symbol == cg_item.aliases.coinmarketcap.symbol) ||
-        (item.symbol == cg_item.token.token_symbol)// )
-    });
-    return ret;
-  }
+  var matchItemToCG = GC.matchCMCToCG;
 
   if (!response['timestamp']) {
     logger.warn("no response.timestamp");
@@ -169,7 +150,7 @@ function handleMCResponse(response) {
   logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
   /*logger.debug("last item: ");
    logger.info(bulk.pop());*/
-   es.bulk({body: bulk});
+  es.bulk({body: bulk});
 }
 
 
@@ -240,13 +221,53 @@ if (param == 'map') {
 if (!param) {
   CG.start();
 
+  var current = 0;
+  var size = 1000;
+
+  function nextBatch(cbOk, cbErr) {
+    // first we do a search, and specify a scroll timeout
+    es.search({
+      index: 'marktcap-v2',
+      type: 'market',
+      // Set to 30 seconds because we are calling right back
+      from: current,
+      size: size
+    }).then(function (result) {
+      if (result && result.hits && _.isArray(result.hits.hits)) {
+        cbOk(result);
+      }
+    }, function (reason) {
+      cbErr(reason);
+    })
+  }
+
+  // importv2 branch.
+  function allBatches(cbOk, cbErr) {
+    function CALLBACK_OK(result) {
+      current += result.hits.hits.length;
+      logger.info(current + " / " + result.hits.total);
+      logger.info(process.uptime());
+      cbOk(result);
+      nextBatch(CALLBACK_OK, cbErr);
+    }
+
+    nextBatch(function (result) {
+      CALLBACK_OK(result);
+    }, cbErr)
+  }
+
   var moo = setInterval(function () {
     if (CG.chaingear) {
       clearInterval(moo);
-      fetchMC();
-      setInterval(function () {
-        fetchMC();
-      }, fetchIntervalMC);
+      allBatches(function cbOk(result){
+        logger.info(result.hits.hits[0]._source);
+      }, function crErr(result){
+        logger.warn(err);
+      });
+      //fetchMC();
+      //setInterval(function () {
+      //  fetchMC();
+      //}, fetchIntervalMC);
     }
     console.log("waiting for chaingear");
   }, 1000);
