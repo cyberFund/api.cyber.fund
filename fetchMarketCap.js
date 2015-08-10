@@ -84,6 +84,29 @@ function transformMarktCapData_v2(market, cg_item){
   return markt;
 }
 
+function transformMarktCapData_log(market, cg_item){
+  if (!cg_item.token || !cg_item.token.token_symbol) {
+    logger.warn("no proper symbol for " + cg_item.system);
+    logger.warn("CG.symbol is " + cg_item.symbol);
+    return null;
+  }
+  var markt = {
+    cap_usd: utils.tryParseFloat(market.metrics.cap_usd),
+    cap_btc: utils.tryParseFloat(market.metrics.cap_btc),
+    price_usd: utils.tryParseFloat(market.metrics.price_usd),
+    price_btc: utils.tryParseFloat(market.metrics.price_btc),
+    volume24_btc: utils.tryParseFloat(market.metrics.volume24_btc),
+    volume24_usd: utils.tryParseFloat(market.metrics.volume24_usd),
+    //tags: market.tags,
+    timestamp: market.timestamp,
+    //ranking_coinmarketcap: market.ranking_coinmarketcap,
+    supply_current: utils.tryParseFloat(market.metrics.supply)
+  };
+
+  markt = extendMarktByCG(markt, cg_item);
+  return markt;
+}
+
 // rest of data from cg being added to records here.
 function extendMarktByCG(markt, cg_item){
   var symbol = cg_item.token.token_symbol;
@@ -316,7 +339,132 @@ if (!param) {
         return ret;
       };
 
-      allBatches(function cbOk(result) {
+      var fs = require("fs");
+      var path = require("path");
+      var walk = function (dir) {
+        var results = [];
+
+        var list = fs.readdirSync(dir);
+
+        list.forEach(function (_file) {
+          var file = path.join(dir, _file);
+          var stat = fs.statSync(file);
+          if (stat && stat.isDirectory()) {
+            results = results.concat(walk(file));
+          } else {
+            if (file.split(".").pop() != "json") {
+              console.log("found non-toml file^" + dir + "/" + file);
+              return;
+            }
+            results.push(file)
+          }
+        });
+        return results
+      };
+      var matched = [];
+      var unmatched = [];
+      var empty = [];
+      var bad_result = [];
+      var files = walk("./cmc-history/");
+
+      var i = -1;
+      var next = true;
+      var stop = false;
+
+      function iterate() {
+        i++;
+        next = false;
+        var file = files[i];
+        var data = require("./" + file);
+        if (!data.length) {
+          empty.push(file);
+        //  console.log("empty file encountered");
+          next = true;
+
+        } else {
+          var matched_system = matchItemToCG(data[0]);
+          if (!matched_system) {
+            console.log("no matching system encountered");
+            next = true;
+            unmatched.push(data[0].symbol + "|" + data[0].name);
+
+          } else {
+            if (data[0].name.match(/^Bytecoin$/) || data[0].name.match(/^InstaMineNugget/)) {
+              next = true;
+              console.log("bad system name encountered");
+              return;
+            }
+            var bulk = [];
+
+            _.each(data, function(item){
+              // normalizing data
+              item.timestamp = moment.utc(moment.unix(item.timestamp)).format("YYYY-MM-DD[T]HH:mm:ss");
+              if (item.metrics) {
+                item.metrics.volume24_usd = item.metrics.volume;
+              }
+              if (item.metrics.price_usd && item.metrics.price_btc) {
+                item.metrics.volume24_btc =
+                  item.metrics.volume *  item.metrics.price_btc / item.metrics.price_usd
+              }
+              if (item.metrics.price_btc) {
+                item.metrics.cap_btc = item.metrics.supply * item.metrics.price_btc;
+              }
+              delete item.metrics.volume;
+
+              var markt = transformMarktCapData_log(item, matched_system);
+              if (markt) {
+                bulk.push({
+                  index: {
+                    _index: alias_write,
+                    _type: 'market'
+                  }
+                });
+                bulk.push(markt);
+              }
+            });
+
+            logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
+            logger.info("file " + i + " of " +files.length);
+            try {
+              es.bulk({body: bulk}, function (err, result) {
+                if (err) {
+                  bad_result.push(file);
+                  console.log("bad result received");
+                  next = true;
+                }
+                else {
+                 console.log("response ok");
+                  next = true;
+                }
+              });
+            } catch (e) {
+              bad_result.push(file);
+              console.log("bad result thrown");
+              next = true;
+            }
+          }
+        }
+      }
+
+      var cycle = setInterval (function(){
+        if (!next) return;
+        if (next) {
+          if (stop) {
+            console.log("bad_result: ");
+            console.log(bad_result );
+            clearInterval(cycle);
+          } else {
+            if (i >= files.length-1) {
+              stop = true;
+            }
+            else {
+              iterate();
+            }
+          }
+        }
+      }, 40);
+
+     /* allBatches(function cbOk(result) {
         var bulk = [];
         _.each(result.hits.hits, function(hit){
           var item = hit._source;
@@ -344,26 +492,26 @@ if (!param) {
         });
       }, function cbErr(err) {
         logger.warn(err);
-      });
+      }); */
 
 
-      /* replace count to deleteByQuery to delete.
-        es.count({
+      //* replace count to deleteByQuery to delete.
+      /*  es.count({
         index: 'marketcap-read',
         type: 'market',
         body: {
           query: {
             range: {
               timestamp: {
-                lte: "now-8d"
+                lte: "now-7d"
               }
             }
           }
         }
       }).then(function(result){
         console.log(result);
-      });
-*/
+      }); */
+
 
       //fetchMC();
       //setInterval(function () {
