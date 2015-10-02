@@ -135,20 +135,23 @@ function handleMCResponse(response) {
   logger.info("new data fetched from coinmarketcap; timestamped  " + timestamp);
   var markets = response['markets'];
   var exchangeRates = response['currencyExchangeRates'];
-  _.each(exchangeRates, function (v, k) {
-    exchangeRates[k] = utils.tryParseFloat(v);
-  });
-
-  var bulk = [];
-  bulk.push(
-    {
-      index: {
-        _index: alias_write,
-        _type: 'exchange-rates'
-      }
+  if (exchangeRates) {
+    _.each(exchangeRates, function (v, k) {
+      exchangeRates[k] = utils.tryParseFloat(v);
     });
-  exchangeRates.timestamp = timestamp;
-  bulk.push(exchangeRates);
+
+    var bulk = [];
+    bulk.push(
+      {
+        index: {
+          _index: alias_write,
+          _type: 'exchange-rates'
+        }
+      });
+    exchangeRates.timestamp = timestamp;
+    bulk.push(exchangeRates);
+
+  }
 
   _.each(markets, function (market) {
     var cg_item = matchItemToCG(market);
