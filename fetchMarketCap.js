@@ -96,9 +96,9 @@ function transformMarketCapData(market, cg_item) {
     }
   }
 
-  if (cg_item.events) {
+ /* if (cg_item.events) {
     markt.events = cg_item.events;
-  }
+  } */
 
   return markt;
 }
@@ -166,7 +166,11 @@ function handleMCResponse(response) {
   logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
   /*logger.debug("last item: ");
    logger.info(bulk.pop());*/
-   es.bulk({body: bulk});
+  var fs = require('fs');
+  //fs.writeFile('bulk.json', JSON.stringify(bulk, null, 2), function(err, ret){
+  //  console.warn("get out");
+  //});
+  es.bulk({body: bulk});
 }
 
 
