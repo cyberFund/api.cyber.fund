@@ -200,10 +200,12 @@ function handleMCResponse(response) {
   es.bulk({body: bulk});
 }
 
-
+// recreate index
 function recreate() {
   es.indices.create({index: index_v});
 }
+
+// put index map
 function putmap() {
   var mapping = {
     index: index_v,
