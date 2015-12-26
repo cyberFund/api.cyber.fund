@@ -43,7 +43,7 @@ var sourceUrlMC = "http://coinmarketcap.northpole.ro/api/v5/all.json";
 var fetchIntervalMC = 5 * 60 * 1000;
 
 var index_old = "market-cap-data";
-var index_v = "marktcap-v3";
+var index_v = "marktcap-v4";
 var alias_read = "marketcap-read";
 var alias_write = "marketcap-write";
 
