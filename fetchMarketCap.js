@@ -26,7 +26,7 @@ memwatch.on('leak', function(info) {
 memwatch.on('leak', function(info) {
   console.error(info);
   var file = '/home/angelo/myapp-' + process.pid + '-' + Date.now() + '.heapsnapshot';
-  heapdump.writeSnapshot(file, function(err){
+  heapdump.writeSnapshot(file, function(err) {
     if (err) console.error(err);
     else console.error('Wrote snapshot: ' + file);
   });
@@ -43,7 +43,7 @@ var sourceUrlMC = "http://coinmarketcap.northpole.ro/api/v5/all.json";
 var fetchIntervalMC = 5 * 60 * 1000;
 
 var index_old = "market-cap-data";
-var index_v = "marktcap-v4";
+var index_v = "marktcap-v5";
 var alias_read = "marketcap-read";
 var alias_write = "marketcap-write";
 
@@ -124,9 +124,9 @@ function transformMarketCapData(market, cg_item) {
     }
   }
 
- /* if (cg_item.events) {
-    markt.events = cg_item.events;
-  } */
+  /* if (cg_item.events) {
+     markt.events = cg_item.events;
+   } */
 
   return markt;
 }
@@ -140,11 +140,10 @@ function handleMCResponse(response) {
    * returns matching chaingear item or false
    */
   function matchItemToCG(item) {
-    return  _.find(CG.chaingear, function (cg_item) {
+    return _.find(CG.chaingear, function(cg_item) {
       if (!cg_item.aliases) return false;
       if (!cg_item.token) return false;
-      return (cg_item.aliases.coinmarketcap == item.name)
-        &&
+      return (cg_item.aliases.coinmarketcap == item.name) &&
         (item.symbol == cg_item.token.token_symbol)
     });
   }
@@ -158,24 +157,23 @@ function handleMCResponse(response) {
   var markets = response['markets'];
   var exchangeRates = response['currencyExchangeRates'];
   if (exchangeRates) {
-    _.each(exchangeRates, function (v, k) {
+    _.each(exchangeRates, function(v, k) {
       exchangeRates[k] = utils.tryParseFloat(v);
     });
 
     var bulk = [];
-    bulk.push(
-      {
-        index: {
-          _index: alias_write,
-          _type: 'exchange-rates'
-        }
-      });
+    bulk.push({
+      index: {
+        _index: alias_write,
+        _type: 'exchange-rates'
+      }
+    });
     exchangeRates.timestamp = timestamp;
     bulk.push(exchangeRates);
 
   }
 
-  _.each(markets, function (market) {
+  _.each(markets, function(market) {
     var cg_item = matchItemToCG(market);
 
     if (cg_item) {
@@ -197,12 +195,16 @@ function handleMCResponse(response) {
   //fs.writeFile('bulk.json', JSON.stringify(bulk, null, 2), function(err, ret){
   //  console.warn("get out");
   //});
-  es.bulk({body: bulk});
+  es.bulk({
+    body: bulk
+  });
 }
 
 // recreate index
 function recreate() {
-  es.indices.create({index: index_v});
+  es.indices.create({
+    index: index_v
+  });
 }
 
 // put index map
@@ -214,6 +216,22 @@ function putmap() {
     body: {
       "market": {
         properties: {
+          "cap_btc": {
+            "type": "double",
+            "doc_values": true
+          },
+          "cap_usd": {
+            "type": "double",
+            "doc_values": true
+          },
+          "consensus": {
+            "type": "object",
+            "properties": {
+              "consensus_type": utils.esMappingObjects.notAnalyzedString,
+              "consensus_name": utils.esMappingObjects.notAnalyzedString,
+              "hashing": utils.esMappingObjects.notAnalyzedString
+            }
+          },
           "system": utils.esMappingObjects.notAnalyzedString,
           "symbol": utils.esMappingObjects.notAnalyzedString,
           "sym_sys": utils.esMappingObjects.notAnalyzedString,
@@ -227,27 +245,64 @@ function putmap() {
               "tags": utils.esMappingObjects.notAnalyzedString
             }
           },
-          "consensus": {
-            "type": "object",
-            "properties": {
-              "consensus_type": utils.esMappingObjects.notAnalyzedString,
-              "consensus_name": utils.esMappingObjects.notAnalyzedString,
-              "hashing": utils.esMappingObjects.notAnalyzedString
-            }
-          },
-          "specs": {
-            "type": "object",
-            "properties": {
-              "block_time": {"type": "integer"},
-              "txs_confirm": {"type": "integer"}
-            }
-          },
+
+
           "events": {
             "type": "object",
             "properties": {
+              "name": utils.esMappingObjects.notAnalyzedString,
+              "start_date": {
+                "type": "date",
+                "format": "dateOptionalTime",
+                "doc_values": true
+              },
+              "url": utils.esMappingObjects.notAnalyzedString,
               "announcement": utils.esMappingObjects.chainGearDate,
               "genesis": utils.esMappingObjects.chainGearDate
             }
+          },
+          "price_btc": {
+            "type": "double",
+            "doc_values": true
+          },
+          "price_usd": {
+            "type": "double",
+            "doc_values": true
+          },
+          "ranking_coinmarketcap": utils.esMappingObjects.notAnalyzedString,
+          "rating_cyber": {
+            "type": "long",
+            "doc_values": true
+          },
+          "specs": {
+            "properties": {
+              "block_time": {
+                "type": "integer",
+                "doc_values": true
+              },
+              "txs_confirm": {
+                "type": "integer",
+                "doc_values": true
+              }
+            }
+          },
+          "supply_current": {
+            "type": "long",
+            "doc_values": true
+          },
+          "tags": utils.esMappingObjects.notAnalyzedString,
+          "timestamp": {
+            "type": "date",
+            "format": "dateOptionalTime",
+            "doc_values": true
+          },
+          "volume24_btc": {
+            "type": "double",
+            "doc_values": true
+          },
+          "volume24_usd": {
+            "type": "long",
+            "doc_values": true
           }
         }
       }
@@ -270,11 +325,11 @@ if (param == 'map') {
 if (!param) {
   CG.start();
 
-  var moo = setInterval(function () {
+  var moo = setInterval(function() {
     if (CG.chaingear) {
       clearInterval(moo);
       fetchMC();
-      setInterval(function () {
+      setInterval(function() {
         fetchMC();
       }, fetchIntervalMC);
     }
