@@ -143,8 +143,7 @@ function handleMCResponse(response) {
     return _.find(CG.chaingear, function(cg_item) {
       if (!cg_item.aliases) return false;
       if (!cg_item.token) return false;
-      return (cg_item.aliases.coinmarketcap == item.name) &&
-        (item.symbol == cg_item.token.token_symbol)
+      return (cg_item.aliases.coinmarketcap == item.name) //&& (item.symbol == cg_item.token.token_symbol)
     });
   }
 
@@ -340,8 +339,8 @@ if (!param) {
  curl -XPOST 'http://esserver:9200/_aliases' -d '
  {
  "actions" : [
- { "remove" : { "index" : "marktcap-v2", "alias" : "marketcap-read" } },
- { "add" : { "index" : "marktcap-v3", "alias" : "marketcap-read" } }
+ { "remove" : { "index" : "marktcap-v5", "alias" : "marketcap-read" } },
+ { "add" : { "index" : "marktcap-v4", "alias" : "marketcap-read" } }
  ]
  }'
  */
