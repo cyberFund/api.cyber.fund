@@ -141,8 +141,9 @@ function handleMCResponse(response) {
    */
   function matchItemToCG(item) {
     return _.find(CG.chaingear, function(cg_item) {
-      if (!cg_item.aliases) return false;
-      if (!cg_item.token) return false;
+      if (!cg_item.aliases) ||
+       (!cg_item.token) ||
+       (!cg_item.aliases.coinmarketcap) return false; 
       if (cg_item.aliases.coinmarketcap.indexOf("+") == -1)
         return (cg_item.aliases.coinmarketcap == item.name) //&& (item.symbol == cg_item.token.token_symbol)
       else {
