@@ -143,7 +143,12 @@ function handleMCResponse(response) {
     return _.find(CG.chaingear, function(cg_item) {
       if (!cg_item.aliases) return false;
       if (!cg_item.token) return false;
-      return (cg_item.aliases.coinmarketcap == item.name) //&& (item.symbol == cg_item.token.token_symbol)
+      if (cg_item.aliases.coinmarketcap.indexOf("+") == -1)
+        return (cg_item.aliases.coinmarketcap == item.name) //&& (item.symbol == cg_item.token.token_symbol)
+      else {
+        var _split = cg_item.aliases.coinmarketcap.trim().split("+");
+        return (_split[0] == item.name) && (_split[1] == item.symbol)
+      }
     });
   }
 
