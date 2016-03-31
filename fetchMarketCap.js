@@ -1,38 +1,11 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var rp = require('request-promise');
 var esLib = require('elasticsearch');
 var moment = require('moment');
 var CG = require("./lib/chaingear-fetcher");
 var utils = require("./lib/utils");
 var logger = require("log4js").getLogger("marketCap fetcher");
-var memwatch = require('memwatch');
-
-
-
-
-var hd;
-memwatch.on('leak', function(info) {
-  console.log(memleak);
-  console.error(info);
-  if (!hd) {
-    hd = new memwatch.HeapDiff();
-  } else {
-    var diff = hd.end();
-    console.error(util.inspect(diff, true, null));
-    hd = null;
-  }
-});
-
-memwatch.on('leak', function(info) {
-  console.error(info);
-  var file = '/home/angelo/myapp-' + process.pid + '-' + Date.now() + '.heapsnapshot';
-  heapdump.writeSnapshot(file, function(err) {
-    if (err) console.error(err);
-    else console.error('Wrote snapshot: ' + file);
-  });
-});
-
-
+var __debug__ = false;
 
 var es = new esLib.Client({
   host: 'http://' + process.env.ES_USERNAME + ':' + process.env.ES_PASSWORD + '@es.index.cyber.fund',
@@ -40,7 +13,7 @@ var es = new esLib.Client({
 });
 
 var sourceUrlMC = "http://coinmarketcap.northpole.ro/api/v5/all.json";
-var fetchIntervalMC = 5 * 60 * 1000;
+//var fetchIntervalMC = 5 * 60 * 1000;
 
 var index_old = "market-cap-data";
 var index_v = "marktcap-v5";
@@ -143,7 +116,7 @@ function handleMCResponse(response) {
     return _.find(CG.chaingear, function(cg_item) {
       if ((!cg_item.aliases) ||
        (!cg_item.token) ||
-       (!cg_item.aliases.coinmarketcap)) return false; 
+       (!cg_item.aliases.coinmarketcap)) return false;
       if (cg_item.aliases.coinmarketcap.indexOf("+") == -1)
         return (cg_item.aliases.coinmarketcap == item.name) //&& (item.symbol == cg_item.token.token_symbol)
       else {
@@ -196,13 +169,21 @@ function handleMCResponse(response) {
   logger.info("pushing " + bulk.length / 2 + " records to elasticsearch");
   /*logger.debug("last item: ");
    logger.info(bulk.pop());*/
-  var fs = require('fs');
+  //var fs = require('fs');
+
   //fs.writeFile('bulk.json', JSON.stringify(bulk, null, 2), function(err, ret){
   //  console.warn("get out");
   //});
-  es.bulk({
-    body: bulk
-  });
+
+
+  if (!__debug__)
+    es.bulk({
+      body: bulk
+    });
+  else {
+    console.log (JSON.stringify(bulk, null, 2))
+    logger.info("hehe")
+  }
 }
 
 // recreate index
@@ -212,120 +193,16 @@ function recreate() {
   });
 }
 
-// put index map
-function putmap() {
-  var mapping = {
-    index: index_v,
-    type: "market",
-    ignoreConflicts: true,
-    body: {
-      "market": {
-        properties: {
-          "cap_btc": {
-            "type": "double",
-            "doc_values": true
-          },
-          "cap_usd": {
-            "type": "double",
-            "doc_values": true
-          },
-          "consensus": {
-            "type": "object",
-            "properties": {
-              "consensus_type": utils.esMappingObjects.notAnalyzedString,
-              "consensus_name": utils.esMappingObjects.notAnalyzedString,
-              "hashing": utils.esMappingObjects.notAnalyzedString
-            }
-          },
-          "system": utils.esMappingObjects.notAnalyzedString,
-          "symbol": utils.esMappingObjects.notAnalyzedString,
-          "sym_sys": utils.esMappingObjects.notAnalyzedString,
-          "genesis_id": utils.esMappingObjects.notAnalyzedString,
-          "dependencies": utils.esMappingObjects.notAnalyzedString,
-          "descriptions": {
-            "type": "object",
-            "properties": {
-              "system_type": utils.esMappingObjects.notAnalyzedString,
-              "state": utils.esMappingObjects.notAnalyzedString,
-              "tags": utils.esMappingObjects.notAnalyzedString
-            }
-          },
-
-
-          "events": {
-            "type": "object",
-            "properties": {
-              "name": utils.esMappingObjects.notAnalyzedString,
-              "start_date": {
-                "type": "date",
-                "format": "dateOptionalTime",
-                "doc_values": true
-              },
-              "url": utils.esMappingObjects.notAnalyzedString,
-              "announcement": utils.esMappingObjects.chainGearDate,
-              "genesis": utils.esMappingObjects.chainGearDate
-            }
-          },
-          "price_btc": {
-            "type": "double",
-            "doc_values": true
-          },
-          "price_usd": {
-            "type": "double",
-            "doc_values": true
-          },
-          "ranking_coinmarketcap": utils.esMappingObjects.notAnalyzedString,
-          "rating_cyber": {
-            "type": "long",
-            "doc_values": true
-          },
-          "specs": {
-            "properties": {
-              "block_time": {
-                "type": "integer",
-                "doc_values": true
-              },
-              "txs_confirm": {
-                "type": "integer",
-                "doc_values": true
-              }
-            }
-          },
-          "supply_current": {
-            "type": "long",
-            "doc_values": true
-          },
-          "tags": utils.esMappingObjects.notAnalyzedString,
-          "timestamp": {
-            "type": "date",
-            "format": "dateOptionalTime",
-            "doc_values": true
-          },
-          "volume24_btc": {
-            "type": "double",
-            "doc_values": true
-          },
-          "volume24_usd": {
-            "type": "long",
-            "doc_values": true
-          }
-        }
-      }
-    }
-  };
-
-  return es.indices.putMapping(mapping);
-}
-
 var param = process.argv[2];
 
 if (param == 'recreate') {
   recreate()
 }
 
-if (param == 'map') {
-  putmap()
-}
+/*if (param == 'map') {
+  var marktcapIndex = require("./lib/indices/marktcap-v5.js")
+  marktcapIndex.putMapping(es, index_v);
+}*/
 
 if (!param) {
   CG.start();
@@ -334,9 +211,9 @@ if (!param) {
     if (CG.chaingear) {
       clearInterval(moo);
       fetchMC();
-      setInterval(function() {
+      /*setInterval(function() {
         fetchMC();
-      }, fetchIntervalMC);
+      }, fetchIntervalMC);*/
     }
     console.log("waiting for chaingear");
   }, 1000);
