@@ -1,3 +1,4 @@
+process.chdir(__dirname);
 var _ = require('lodash');
 var rp = require('request-promise');
 var esLib = require('elasticsearch');
