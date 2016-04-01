@@ -128,6 +128,7 @@ function handleMCResponse(response) {
 
   if (!response['timestamp']) {
     logger.warn("no response.timestamp");
+    return;
   }
   var timestamp = response['timestamp'];
   timestamp = moment.utc(moment.unix(timestamp)).format("YYYY-MM-DD[T]HH:mm:ss");
