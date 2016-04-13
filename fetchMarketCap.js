@@ -133,7 +133,7 @@ function handleMCResponse(response) {
   if (!response['timestamp']) {
     logger.warn("no response.timestamp");
     console.log(response)
-    if (countTries <= maxCountTries) {}
+    if (countTries <= maxCountTries) {
       fetchMC();
     }
     return;
@@ -196,7 +196,7 @@ function handleMCResponse(response) {
 }
 
 
-  CG.start();
+CG.start();
 
 var moo = setInterval(function() {
   if (CG.chaingear) {
