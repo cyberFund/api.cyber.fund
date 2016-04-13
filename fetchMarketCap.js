@@ -15,8 +15,6 @@ var es = new esLib.Client({
 
 var sourceUrlMC = "http://coinmarketcap.northpole.ro/api/v5/all.json";
 
-var index_old = "market-cap-data";
-var index_v = "marktcap-v5";
 var alias_read = "marketcap-read";
 var alias_write = "marketcap-write";
 
@@ -25,7 +23,7 @@ function fetchMC() {
     method: 'GET',
     uri: sourceUrlMC,
     transform: utils.parseResponse,
-    timeout: 40000
+    timestamp: 40000
   };
   rp(options).then(handleMCResponse, handleError);
 }
@@ -189,44 +187,13 @@ function handleMCResponse(response) {
   }
 }
 
-// recreate index
-function recreate() {
-  es.indices.create({
-    index: index_v
-  });
-}
 
-var param = process.argv[2];
-
-if (param == 'recreate') {
-  recreate()
-}
-
-/*if (param == 'map') {
-  var marktcapIndex = require("./lib/indices/marktcap-v5.js")
-  marktcapIndex.putMapping(es, index_v);
-}*/
-
-if (!param) {
   CG.start();
 
-  var moo = setInterval(function() {
-    if (CG.chaingear) {
-      clearInterval(moo);
-      fetchMC();
-      /*setInterval(function() {
-        fetchMC();
-      }, fetchIntervalMC);*/
-    }
-    console.log("waiting for chaingear");
-  }, 1000);
-}
-/*
- curl -XPOST 'http://esserver:9200/_aliases' -d '
- {
- "actions" : [
- { "remove" : { "index" : "marktcap-v5", "alias" : "marketcap-read" } },
- { "add" : { "index" : "marktcap-v4", "alias" : "marketcap-read" } }
- ]
- }'
- */
+var moo = setInterval(function() {
+  if (CG.chaingear) {
+    clearInterval(moo);
+    fetchMC();
+  }
+  console.log("waiting for chaingear");
+}, 1000);
