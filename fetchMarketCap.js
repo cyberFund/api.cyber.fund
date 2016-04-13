@@ -14,7 +14,6 @@ var es = new esLib.Client({
 });
 
 var sourceUrlMC = "http://coinmarketcap.northpole.ro/api/v5/all.json";
-//var fetchIntervalMC = 5 * 60 * 1000;
 
 var index_old = "market-cap-data";
 var index_v = "marktcap-v5";
@@ -25,7 +24,8 @@ function fetchMC() {
   var options = {
     method: 'GET',
     uri: sourceUrlMC,
-    transform: utils.parseResponse
+    transform: utils.parseResponse,
+    timeout: 40000
   };
   rp(options).then(handleMCResponse, handleError);
 }
@@ -129,6 +129,7 @@ function handleMCResponse(response) {
 
   if (!response['timestamp']) {
     logger.warn("no response.timestamp");
+    console.log(response)
     return;
   }
   var timestamp = response['timestamp'];
