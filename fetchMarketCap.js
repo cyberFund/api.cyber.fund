@@ -18,6 +18,9 @@ var sourceUrlMC = "http://coinmarketcap.northpole.ro/api/v5/all.json";
 var alias_read = "marketcap-read";
 var alias_write = "marketcap-write";
 
+var countTries = 0;
+var maxCountTries = 3;
+
 function fetchMC() {
   var options = {
     method: 'GET',
@@ -25,8 +28,10 @@ function fetchMC() {
     transform: utils.parseResponse,
     timestamp: 40000
   };
+  countTries++;
   rp(options).then(handleMCResponse, handleError);
 }
+
 
 function handleError(error) {
   console.log(error);
@@ -128,6 +133,9 @@ function handleMCResponse(response) {
   if (!response['timestamp']) {
     logger.warn("no response.timestamp");
     console.log(response)
+    if (countTries <= maxCountTries) {}
+      fetchMC();
+    }
     return;
   }
   var timestamp = response['timestamp'];

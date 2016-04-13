@@ -3,7 +3,6 @@ var _ = require('lodash');
 var rp = require('request-promise');
 var esLib = require('elasticsearch');
 var moment = require('moment');
-var CG = require("./lib/chaingear-fetcher");
 var utils = require("./lib/utils");
 var logger = require("log4js").getLogger("marketCap fetcher");
 var __debug__ = false;
@@ -52,8 +51,8 @@ if (param == 'map') {
  curl -XPOST 'http://esserver:9200/_aliases' -d '
  {
  "actions" : [
- { "remove" : { "index" : "marktcap-v5", "alias" : "marketcap-read" } },
- { "add" : { "index" : "marktcap-v4", "alias" : "marketcap-read" } }
+ { "remove" : { "index" : "marktcap-v5", "alias" : "marketcap-write" } },
+ { "add" : { "index" : "marktcap-v6", "alias" : "marketcap-write" } }
  ]
  }'
  */
