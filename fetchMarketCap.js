@@ -7,6 +7,7 @@ var CG = require("./lib/chaingear-fetcher");
 var utils = require("./lib/utils");
 var logger = require("log4js").getLogger("marketCap fetcher");
 var __debug__ = false;
+var time = process.hrtime();
 
 var es = new esLib.Client({
   host: 'http://' + process.env.ES_USERNAME + ':' + process.env.ES_PASSWORD + '@es.index.cyber.fund',
@@ -26,7 +27,7 @@ function fetchMC() {
     method: 'GET',
     uri: sourceUrlMC,
     transform: utils.parseResponse,
-    timestamp: 40000
+    timeout: 40000
   };
   countTries++;
   rp(options).then(handleMCResponse, handleError);
@@ -199,9 +200,10 @@ function handleMCResponse(response) {
 CG.start();
 
 var moo = setInterval(function() {
+  console.log (process.hrtime(time) + " waiting for chaingear");
+  if (process.hrtime(time) > 25) clearInterval(moo);
   if (CG.chaingear) {
     clearInterval(moo);
     fetchMC();
   }
-  console.log("waiting for chaingear");
 }, 1000);
