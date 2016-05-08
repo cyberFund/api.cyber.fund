@@ -43,13 +43,13 @@ function transformMarketCapData(market, cg_item) {
     return _.pick(item, ['usd', 'btc']);
   }
 
-  if (!cg_item.token || !cg_item.token.token_symbol) {
+  if (!cg_item.token || !cg_item.token.symbol) {
     logger.warn("no proper symbol for " + cg_item.system);
     logger.warn("CG.symbol is " + cg_item.symbol);
     return null;
   }
 
-  var symbol = cg_item.token.token_symbol;
+  var symbol = cg_item.token.symbol;
   var rating_cyber = cg_item.ratings ? (cg_item.ratings.rating_cyber || 0) : 0;
 
   var markt = {
@@ -123,7 +123,7 @@ function handleMCResponse(response) {
        (!cg_item.token) ||
        (!cg_item.aliases.coinmarketcap)) return false;
       if (cg_item.aliases.coinmarketcap.indexOf("+") == -1)
-        return (cg_item.aliases.coinmarketcap == item.name) //&& (item.symbol == cg_item.token.token_symbol)
+        return (cg_item.aliases.coinmarketcap == item.name) //&& (item.symbol == cg_item.token.symbol)
       else {
         var _split = cg_item.aliases.coinmarketcap.trim().split("+");
         return (_split[0] == item.name) && (_split[1] == item.symbol)
