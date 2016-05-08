@@ -194,6 +194,7 @@ function handleMCResponse(response) {
     console.log (JSON.stringify(bulk, null, 2))
     logger.info("hehe")
   }
+  clearTimeout(foo);
 }
 
 try{
@@ -207,11 +208,11 @@ var moo = setInterval(function() {
   console.log (process.hrtime(time) + " waiting for chaingear");
   if (CG.chaingear) {
     clearInterval(moo);
-    try {
-      fetchMC();
-    } catch (e) {
-      console.log ("Error fetching CMC");
-      throw(e);
-    }
+    fetchMC();
   }
 }, 1000);
+
+var foo = setTimeout(function(){
+  clearInterval(moo);
+  clearTimeout(foo);
+}, 40000)
