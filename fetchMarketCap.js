@@ -215,8 +215,3 @@ var moo = setInterval(function() {
     }
   }
 }, 1000);
-
-var foo = setTimeout(function(){
-  clearInterval(moo);
-  clearTimeout(foo);
-}, 40000)
