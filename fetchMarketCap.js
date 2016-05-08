@@ -196,14 +196,27 @@ function handleMCResponse(response) {
   }
 }
 
-
+try{
 CG.start();
+} catch(e) {
+  console.log ("Error loading chaingear");
+  throw(e);
+}
 
 var moo = setInterval(function() {
   console.log (process.hrtime(time) + " waiting for chaingear");
-  if (process.hrtime(time) > 25) clearInterval(moo);
   if (CG.chaingear) {
     clearInterval(moo);
-    fetchMC();
+    try {
+      fetchMC();
+    } catch (e) {
+      console.log ("Error fetching CMC");
+      throw(e);
+    }
   }
 }, 1000);
+
+var foo = setTimeout(function(){
+  clearInterval(moo);
+  clearTimeout(foo);
+}, 40000)
